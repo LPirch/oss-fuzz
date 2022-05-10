@@ -30,6 +30,7 @@ import subprocess
 import sys
 import templates
 import time
+from shutil import make_archive, rmtree
 
 import constants
 
@@ -121,7 +122,7 @@ class Project:
   @property
   def out(self):
     """Returns the out dir for the project. Creates it if needed."""
-    return _get_out_dir(self.name)
+    return _get_out_dir(self.name, self.commit)
 
   @property
   def work(self):
@@ -276,6 +277,11 @@ def get_parser():  # pylint: disable=too-many-statements
                                     action='store_true',
                                     default=False,
                                     help='enable GraphExtractionPlugin when building the target')
+  build_fuzzers_parser.add_argument('--zip',
+                                    dest='zip_results',
+                                    action='store_true',
+                                    default=False,
+                                    help='zip the results in project.out to save space')
   build_fuzzers_parser.add_argument('--mount_path',
                                     dest='mount_path',
                                     help='path to mount local source in '
@@ -432,20 +438,19 @@ def _get_command_string(command):
   return ' '.join(pipes.quote(part) for part in command)
 
 
-def _get_project_build_subdir(project, subdir_name):
+def _get_project_build_subdir(project, subdir_name, commit=''):
   """Creates the |subdir_name| subdirectory of the |project| subdirectory in
-  |BUILD_DIR| and returns its path."""
-  directory = os.path.join(BUILD_DIR, subdir_name, project)
+  |BUILD_DIR|, creates it if not existent and returns its path."""
+  directory = os.path.join(BUILD_DIR, subdir_name, project, commit).rstrip('/')
   if not os.path.exists(directory):
-    os.makedirs(directory)
-
+    os.makedirs(directory, exist_ok=True)
   return directory
 
 
-def _get_out_dir(project=''):
+def _get_out_dir(project='', commit=None):
   """Creates and returns path to /out directory for the given project (if
   specified)."""
-  return _get_project_build_subdir(project, 'out')
+  return _get_project_build_subdir(project, 'out', commit=commit)
 
 
 def _add_architecture_args(parser, choices=None):
@@ -634,7 +639,8 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
     noinst,
     dwarf_version,
     graph_plugin,
-    mount_path=None):
+    mount_path=None,
+    zip_results=False):
   """Builds fuzzers."""
   if not build_image_impl(project, commit):
     return False
@@ -646,14 +652,14 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
     docker_run([
         '-m', DOCKER_MEMLIMIT,
         '-v',
-        '%s:/out' % project.out, '-t',
+        '%s:/out' % _get_absolute_path(project.out), '-t',
         'gcr.io/oss-fuzz/%s_%s' % (project.name, commit), 'timeout', '-k', '120', f'{DOCKER_TIMEOUT}{DOCKER_TIMEOUT_UNIT}', '/bin/bash', '-c', 'rm -rf /out/*'
     ])
 
     docker_run([
         '-m', DOCKER_MEMLIMIT,
         '-v',
-        '%s:/work' % project.work, '-t',
+        '%s:/work' % _get_absolute_path(project.work), '-t',
         'gcr.io/oss-fuzz/%s_%s' % (project.name, commit), 'timeout', '-k', '120', f'{DOCKER_TIMEOUT}{DOCKER_TIMEOUT_UNIT}', '/bin/bash', '-c', 'rm -rf /work/*'
     ])
 
@@ -667,7 +673,7 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
       'COMMIT=' + commit,
       'NOINST=' + ("1" if noinst else ""),
       'DWARF=%d' % dwarf_version,
-      'GRAPHPLUGIN=' + ("1" if graph_plugin else ""),
+      'GRAPHPLUGIN=' + ("1" if graph_plugin else "")
   ]
 
   _add_oss_fuzz_ci_if_needed(env)
@@ -699,8 +705,8 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
   command += [
       '-m', DOCKER_MEMLIMIT,
       '-v',
-      '%s:/out' % project.out, '-v',
-      '%s:/work' % project.work, '-t',
+      '%s:/out' % _get_absolute_path(project.out), '-v',
+      '%s:/work' % _get_absolute_path(project.work), '-t',
       'gcr.io/oss-fuzz/%s_%s' % (project.name, commit),
       'timeout', '-k', '120', '-s', 'KILL', f'{DOCKER_TIMEOUT}{DOCKER_TIMEOUT_UNIT}',
       'compile',
@@ -714,6 +720,22 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
     logging.error('Building fuzzers failed.')
     return False
 
+  if zip_results:
+    print(f"Zipping results in {project.out}")
+    target_zip = f"{project.out}.zip"
+    if os.path.exists(target_zip):
+      os.remove(target_zip)
+    # clean up other files of ozz-fuzz
+    for root, dirs, files in os.walk(project.out):
+      for filename in files:
+        if not filename.startswith('AST_') or not filename.endswith('.json'):
+          os.remove(os.path.join(root, filename))
+    make_archive(project.out, 'zip', project.out)
+    rmtree(project.out)
+    os.makedirs(project.out, exist_ok=True)
+    out_parent = os.path.dirname(project.out.rstrip('/'))
+    stem = os.path.basename(out_parent)
+    os.rename(target_zip, os.path.join(project.out, f"{stem}.zip"))
   return True
 
 
@@ -730,7 +752,8 @@ def build_fuzzers(args):
                             args.noinst,
                             args.dwarf_version,
                             args.graph_plugin,
-                            mount_path=args.mount_path)
+                            mount_path=args.mount_path,
+                            zip_results=args.zip_results)
 
 
 def _add_oss_fuzz_ci_if_needed(env):

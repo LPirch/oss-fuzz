@@ -262,6 +262,7 @@ def get_build_steps(  # pylint: disable=too-many-locals, too-many-statements, to
       project.image,
       project.fuzzing_language,
       branch=config.branch,
+      commit=config.commit,
       test_image_suffix=config.test_image_suffix)
 
   # Sort engines to make AFL first to test if libFuzzer has an advantage in
@@ -552,6 +553,11 @@ def get_args(description):
                       required=False,
                       default=False,
                       help='Do builds in parallel.')
+  parser.add_argument('--commit',
+                      required=False,
+                      type=str,
+                      default=None,
+                      help='revision of the target project')
   return parser.parse_args()
 
 
@@ -568,8 +574,10 @@ def build_script_main(script_description, get_build_steps_func, build_type):
 
   credentials = oauth2client.client.GoogleCredentials.get_application_default()
   error = False
+  if args.default is not None and len(args.projects) > 1:
+    raise ValueError('Commit can only be specified with a single project')
   config = Config(args.testing, args.test_image_suffix, args.branch,
-                  args.parallel)
+                  args.parallel, args.commit)
   for project_name in args.projects:
     logging.info('Getting steps for: "%s".', project_name)
     try:

@@ -34,6 +34,7 @@ if ! [ -z "$COMMIT" ]; then
 				git pull --unshallow
 			fi
 			echo "INFO: Try to checkout $COMMIT of project $PROJECT in directory $directory"
+			git fetch --tags
 			if git checkout $COMMIT; then
 				echo "INFO: checked out commit $COMMIT of project $PROJECT"
 				checkout_success=1
@@ -227,17 +228,6 @@ if ! [ -z "$NOINST" ]; then
 	echo "---------------------------------------------------------------"
 fi
 
-if ! [ -z "$GRAPHPLUGIN" ]; then
-	export CFLAGS="-fplugin=/usr/local/lib/libgraph_extraction_plugin.so $CFLAGS"
-	export CXXFLAGS="-fplugin=/usr/local/lib/libgraph_extraction_plugin.so $CXXFLAGS"
-
-	echo "INFO: Build without GraphExtractionPlugin. New CFLAGS/CXXFLAGS:"
-	echo "---------------------------------------------------------------"
-	echo "CFLAGS=$CFLAGS"
-	echo "CXXFLAGS=$CXXFLAGS"
-	echo "---------------------------------------------------------------"
-fi
-
 # Remove ever compile option that starts with "-g" and has probably controls
 # the creation of debug information in some way or another. We want to have
 # full control ourselves!
@@ -248,6 +238,24 @@ echo "---------------------------------------------------------------"
 echo "CFLAGS=$CFLAGS"
 echo "CXXFLAGS=$CXXFLAGS"
 echo "---------------------------------------------------------------"
+
+
+if ! [ -z "$GRAPHPLUGIN" ]; then
+	export CFLAGS="-fplugin=/usr/local/lib/libgraph_extraction_plugin.so \
+-Xclang -plugin-arg-graph-extraction -Xclang --basedir -Xclang -plugin-arg-graph-extraction -Xclang $SRC \
+-Xclang -plugin-arg-graph-extraction -Xclang --out-dir -Xclang -plugin-arg-graph-extraction -Xclang $OUT \
+$CFLAGS"
+	export CXXFLAGS="-fplugin=/usr/local/lib/libgraph_extraction_plugin.so \
+-Xclang -plugin-arg-graph-extraction -Xclang --basedir -Xclang -plugin-arg-graph-extraction -Xclang $SRC \
+-Xclang -plugin-arg-graph-extraction -Xclang --out-dir -Xclang -plugin-arg-graph-extraction -Xclang $OUT \
+$CXXFLAGS"
+
+	echo "INFO: Build with GraphExtractionPlugin. New CFLAGS/CXXFLAGS:"
+	echo "---------------------------------------------------------------"
+	echo "CFLAGS=$CFLAGS"
+	echo "CXXFLAGS=$CXXFLAGS"
+	echo "---------------------------------------------------------------"
+fi
 
 # Add dwarf version and other debug flags (-gxxxx flags) to CFLAGS/CXXFLAGS
 # explicitly. Note, this may not result in a target binary that actually
@@ -261,6 +269,10 @@ echo "---------------------------------------------------------------"
 echo "CFLAGS=$CFLAGS"
 echo "CXXFLAGS=$CXXFLAGS"
 echo "---------------------------------------------------------------"
+
+echo "==============================================================="
+echo "${BUILD_CMD}"
+echo "==============================================================="
 
 if [ "${BUILD_UID-0}" -ne "0" ]; then
   adduser -u $BUILD_UID --disabled-password --gecos '' builder
