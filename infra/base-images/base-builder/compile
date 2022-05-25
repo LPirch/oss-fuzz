@@ -195,7 +195,7 @@ echo "CXXFLAGS=$CXXFLAGS"
 echo "RUSTFLAGS=$RUSTFLAGS"
 echo "---------------------------------------------------------------"
 
-BUILD_CMD="bash -eux $SRC/build.sh"
+BUILD_CMD="bash -eux $SRC/install.sh"
 
 # Set +u temporarily to continue even if GOPATH and OSSFUZZ_RUSTPATH are undefined.
 set +u
