@@ -15,7 +15,7 @@ BASE_DIR=$(dirname $(realpath $0))
         if [ -f "$outzip" ]; then
             echo "skipping ${project}@${commit}"
         else
-            python infra/helper.py build_fuzzers $project --commit $commit --graph --zip --noinst --clean
+            python infra/helper.py build_fuzzers $project --commit $commit --graph --zip --noinst --clean --passuser
         fi
     done
 } < $CSV
