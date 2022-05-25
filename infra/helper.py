@@ -84,8 +84,10 @@ class Project:
       self,
       project_name_or_path,
       is_external=False,
+      commit=None,
       build_integration_path=constants.DEFAULT_EXTERNAL_BUILD_INTEGRATION_PATH):
     self.is_external = is_external
+    self.commit = commit
     if self.is_external:
       self.name = os.path.basename(os.path.abspath(project_name_or_path))
       self.path = project_name_or_path
@@ -202,7 +204,7 @@ def parse_args(parser, args=None):
   # Use hacky method for extracting attributes so that ShellTest works.
   # TODO(metzman): Fix this.
   is_external = getattr(parsed_args, 'external', False)
-  parsed_args.project = Project(parsed_args.project, is_external)
+  parsed_args.project = Project(parsed_args.project, is_external, parsed_args.commit)
   return parsed_args
 
 
@@ -295,6 +297,11 @@ def get_parser():  # pylint: disable=too-many-statements
                                     action='store_false',
                                     help='do not clean existing artifacts '
                                     '(default).')
+  build_fuzzers_parser.add_argument('--passuser', 
+                                    dest='passuser',
+                                    action='store_true',
+                                    default=False,
+                                    help='whether to pass the current UID:GID to the docker container')
   build_fuzzers_parser.set_defaults(clean=False)
 
   check_build_parser = subparsers.add_parser(
@@ -640,7 +647,8 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
     dwarf_version,
     graph_plugin,
     mount_path=None,
-    zip_results=False):
+    zip_results=False,
+    passuser=False):
   """Builds fuzzers."""
   if not build_image_impl(project, commit):
     return False
@@ -709,7 +717,13 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
       '%s:/work' % _get_absolute_path(project.work), '-t',
       'gcr.io/oss-fuzz/%s_%s' % (project.name, commit),
       'timeout', '-k', '120', '-s', 'KILL', f'{DOCKER_TIMEOUT}{DOCKER_TIMEOUT_UNIT}',
-      'compile',
+  ]
+  if passuser:
+    command += [
+       f'--user {os.getuid()}:{os.getgid()}'
+    ]
+  command += [
+      'compile'
   ]
   print(command)
 
