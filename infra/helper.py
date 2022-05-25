@@ -709,6 +709,10 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
           '-v',
           '%s:%s' % (_get_absolute_path(source_path), workdir),
       ]
+  if passuser:
+    command += [
+       f'--user {os.getuid()}:{os.getgid()}'
+    ]
 
   command += [
       '-m', DOCKER_MEMLIMIT,
@@ -717,12 +721,6 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
       '%s:/work' % _get_absolute_path(project.work), '-t',
       'gcr.io/oss-fuzz/%s_%s' % (project.name, commit),
       'timeout', '-k', '120', '-s', 'KILL', f'{DOCKER_TIMEOUT}{DOCKER_TIMEOUT_UNIT}',
-  ]
-  if passuser:
-    command += [
-       f'--user {os.getuid()}:{os.getgid()}'
-    ]
-  command += [
       'compile'
   ]
   print(command)
