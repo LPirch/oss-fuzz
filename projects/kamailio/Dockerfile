@@ -18,5 +18,5 @@ FROM gcr.io/oss-fuzz-base/base-builder
 RUN apt-get update && apt-get install -y bison flex
 RUN git clone https://github.com/kamailio/kamailio
 
-WORKDIR $SRC
-COPY build.sh $SRC/
+WORKDIR $SRC/kamailio
+COPY *.sh $SRC/

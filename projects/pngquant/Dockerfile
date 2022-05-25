@@ -16,7 +16,7 @@
 
 FROM gcr.io/oss-fuzz-base/base-builder
 RUN apt-get update && apt-get install -y make libpng-dev autoconf libtool
-RUN git clone --depth 1 https://github.com/kornelski/pngquant
-RUN git clone --depth 1 https://github.com/glennrp/libpng.git $SRC/pngquant/libpng
+RUN git clone --recursive https://github.com/kornelski/pngquant
+
 WORKDIR $SRC/
-RUN mv $SRC/pngquant/test/oss_fuzz_build.sh $SRC/build.sh
+COPY *.sh $SRC/

@@ -1,0 +1,6 @@
+#!/bin/bash -e
+
+mkdir build
+cd build
+cmake -G"Unix Makefiles" ..
+make -j$(nproc)

@@ -1,0 +1,9 @@
+homepage: "https://www.imagemagick.org"
+language: c
+primary_contact: "lukpirch@tu-bs.de"
+auto_ccs: ""
+sanitizers:
+  - undefined
+architectures:
+  - x86_64
+main_repo: 'https://github.com/ImageMagick/ImageMagick6'

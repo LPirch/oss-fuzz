@@ -16,7 +16,7 @@
 
 FROM gcr.io/oss-fuzz-base/base-builder
 
-RUN git clone --depth 1 https://github.com/libsndfile/libsndfile.git /src/libsndfile
+RUN git clone https://github.com/libsndfile/libsndfile.git libsndfile
 
 WORKDIR $SRC/libsndfile
-COPY build.sh $SRC/
+COPY *.sh $SRC/

@@ -17,6 +17,6 @@
 FROM gcr.io/oss-fuzz-base/base-builder
 RUN apt-get update && \
     apt-get install -y pkgconf make libtool automake autoconf
-RUN git clone --depth 1 https://github.com/lxc/lxc
+RUN git clone https://github.com/lxc/lxc
 WORKDIR lxc
-COPY build.sh $SRC/
+COPY *.sh $SRC/

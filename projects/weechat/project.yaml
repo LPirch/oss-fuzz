@@ -1,4 +1,4 @@
-homepage: "https://github.com/weechat/weechat"
-primary_contact: "flashcode@flashtux.org"
-auto_ccs:
-  - "security@weechat.org"
+homepage: "https://github.com/weechat/weechat.git"
+language: c
+primary_contact: "lukpirch@tu-bs.de"
+main_repo: 'https://github.com/weechat/weechat.git'

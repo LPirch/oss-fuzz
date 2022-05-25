@@ -1,0 +1,12 @@
+homepage: "https://github.com/adaptivecomputing/torque.git"
+primary_contact: "lukpirch@tu-bs.de"
+language: c
+builds_per_day: 4
+auto_ccs:
+architectures:
+  - x86_64
+sanitizers:
+  - address
+  - undefined
+  - memory
+main_repo: 'https://github.com/adaptivecomputing/torque.git'

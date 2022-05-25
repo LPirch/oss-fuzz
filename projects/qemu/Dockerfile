@@ -27,4 +27,5 @@ ADD https://download.gnome.org/sources/glib/2.67/glib-2.67.6.tar.xz $SRC
 RUN tar xvJf $SRC/glib-2.67.6.tar.xz
 RUN git clone --depth 1 https://git.qemu.org/git/qemu.git qemu
 WORKDIR qemu
-COPY build.sh $SRC/
+COPY *.sh $SRC/
+

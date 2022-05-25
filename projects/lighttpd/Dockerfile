@@ -19,5 +19,5 @@ RUN apt-get update && apt-get install -y libz-dev libtool pkg-config autoconf
 RUN git clone https://github.com/lighttpd/lighttpd1.4
 
 WORKDIR $SRC/lighttpd1.4
-COPY build.sh $SRC/
+COPY *.sh $SRC/
 COPY fuzz_* $SRC/
