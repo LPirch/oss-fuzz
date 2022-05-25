@@ -16,7 +16,7 @@ fi
     do 
         echo "[-] Building $project@$commit"
         # echo "$project" >> projects.list
-        python infra/helper.py build_fuzzers $project --commit $commit --graph --zip --noinst --clean --nprocs 6
+        python infra/helper.py build_fuzzers $project --commit $commit --graph --zip --noinst --clean --passuser
         exit_code=$?
         echo "$project,$commit,$exit_code" >> $OUT_FILE
     done
