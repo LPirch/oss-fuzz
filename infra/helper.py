@@ -767,7 +767,8 @@ def build_fuzzers(args):
                             args.dwarf_version,
                             args.graph_plugin,
                             mount_path=args.mount_path,
-                            zip_results=args.zip_results)
+                            zip_results=args.zip_results,
+                            passuser=args.passuser)
 
 
 def _add_oss_fuzz_ci_if_needed(env):
