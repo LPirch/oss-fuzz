@@ -1,4 +1,4 @@
 #!/bin/bash -eu
 
 ./configure CFLAGS="$CFLAGS" 
-make
+make -j$(nproc) install
