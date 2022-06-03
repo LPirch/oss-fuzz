@@ -731,9 +731,9 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
   if passuser:
       # chown results
       docker_run([
-          '-v',
-          '%s:/out' % _get_absolute_path(project.out),
-          '%s:/work' % _get_absolute_path(project.work), '-t',
+          '-t',
+          '-v', '%s:/out' % _get_absolute_path(project.out),
+          '-v', '%s:/work' % _get_absolute_path(project.work),
           'gcr.io/oss-fuzz/%s_%s' % (project.name, commit),
           'timeout', '-k', '120', f'{DOCKER_TIMEOUT}{DOCKER_TIMEOUT_UNIT}', 
           '/bin/bash', '-c', f'chown -R {os.getuid()}:{os.getgid()} /out /work'
