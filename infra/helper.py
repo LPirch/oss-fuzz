@@ -709,10 +709,6 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
           '-v',
           '%s:%s' % (_get_absolute_path(source_path), workdir),
       ]
-  if passuser:
-    command += [
-       f'--user {os.getuid()}:{os.getgid()}'
-    ]
 
   command += [
       '-m', DOCKER_MEMLIMIT,
@@ -732,6 +728,16 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
     logging.error('Building fuzzers failed.')
     return False
 
+  if passuser:
+      # chown results
+      docker_run([
+          '-v',
+          '%s:/out' % _get_absolute_path(project.out),
+          '%s:/work' % _get_absolute_path(project.work), '-t',
+          'gcr.io/oss-fuzz/%s_%s' % (project.name, commit),
+          'timeout', '-k', '120', f'{DOCKER_TIMEOUT}{DOCKER_TIMEOUT_UNIT}', 
+          '/bin/bash', '-c', f'chown -R {os.getuid()}:{os.getgid()} /out /work'
+      ])
   if zip_results:
     print(f"Zipping results in {project.out}")
     target_zip = f"{project.out}.zip"
