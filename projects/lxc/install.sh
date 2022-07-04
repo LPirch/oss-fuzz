@@ -11,14 +11,19 @@ export CXXFLAGS=${CXXFLAGS:-$flags}
 export OUT=${OUT:-$(pwd)/out}
 mkdir -p $OUT
 
-./autogen.sh
-./configure \
-    --disable-tools \
-    --disable-commands \
-    --disable-apparmor \
-    --disable-openssl \
-    --disable-selinux \
-    --disable-seccomp \
-    --disable-capabilities \
-    --disable-no-undefined
-make -j$(nproc)
+if [ -f meson.build ]; then
+    meson setup -Dprefix=/usr build -Dman=false
+    meson compile -C build
+else
+    ./autogen.sh
+    ./configure \
+        --disable-tools \
+        --disable-commands \
+        --disable-apparmor \
+        --disable-openssl \
+        --disable-selinux \
+        --disable-seccomp \
+        --disable-capabilities \
+        --disable-no-undefined
+    make -j$(nproc)
+fi
