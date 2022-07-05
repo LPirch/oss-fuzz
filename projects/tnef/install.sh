@@ -2,5 +2,5 @@
 set -ex
 
 autoreconf
-./configure CFLAGS="$CFLAGS" 
+./configure
 make -j$(nproc)

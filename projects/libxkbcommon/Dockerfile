@@ -15,7 +15,11 @@
 ################################################################################
 
 FROM gcr.io/oss-fuzz-base/base-builder
-RUN apt-get update && apt-get install -y make cmake libtool autoconf automake flex bison pkg-config xutils-dev
+RUN apt-get update && apt-get install -y make cmake libtool autoconf \
+    automake flex bison pkg-config xutils-dev libxcb-xkb-dev \
+    libxml2-dev libwayland-client0 wayland-protocols valgrind doxygen \
+    xkb-data libwayland-dev graphviz
+RUN pip3 install meson ninja
 RUN git clone https://github.com/xkbcommon/libxkbcommon.git libxkbcommon
 WORKDIR libxkbcommon
 COPY *.sh $SRC/

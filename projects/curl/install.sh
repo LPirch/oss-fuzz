@@ -1,5 +1,5 @@
 #!/bin/bash -eu
 
 autoreconf -fi
-./configure --without-ssl
+./configure --with-openssl
 make -j$(nproc)

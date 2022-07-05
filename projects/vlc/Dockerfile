@@ -15,7 +15,7 @@
 ################################################################################
 
 FROM gcr.io/oss-fuzz-base/base-builder
-RUN apt-get update && apt-get install -y apt install gettext flex \
+RUN apt-get update && apt-get install -y gettext flex \
     bison libtool libasound2-dev lua5.3 \
     liblua5.2-dev libavutil-dev libavcodec-dev libgstreamer1.0-dev \
     libavformat-dev libswscale-dev libpostproc-dev liba52-dev \

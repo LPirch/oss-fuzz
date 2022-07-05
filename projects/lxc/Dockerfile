@@ -16,11 +16,11 @@
 
 FROM gcr.io/oss-fuzz-base/base-builder
 RUN apt-get update && \
-    apt-get install -y pkgconf make libtool automake autoconf pkg-config \
+    apt-get install -y make libtool automake autoconf pkg-config \
         libsystemd-dev docbook-to-man libcap-dev libseccomp-dev \
-        libselinux1-dev libapparmor-dev libssl-dev
+        libselinux1-dev libapparmor-dev libssl-dev ninja-build
 RUN pip3 install --user --upgrade meson cmake
-RUN export PATH=/root/.local/bin:$PATH
+ENV PATH="/root/.local/bin:${PATH}"
 RUN git clone https://github.com/lxc/lxc
 WORKDIR lxc
 COPY *.sh $SRC/
