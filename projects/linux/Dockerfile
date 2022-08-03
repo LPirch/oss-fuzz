@@ -1,4 +1,4 @@
-# Copyright 2016 Google Inc.
+# Copyright 2018 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,18 +15,9 @@
 ################################################################################
 
 FROM gcr.io/oss-fuzz-base/base-builder
-RUN apt-get update && apt-get install -y make autoconf automake libtool build-essential \
-    libass-dev libfreetype6-dev libsdl1.2-dev \
-    libvdpau-dev libxcb1-dev libxcb-shm0-dev libdrm-dev \
-    pkg-config texinfo libbz2-dev zlib1g-dev yasm cmake mercurial wget \
-    xutils-dev libpciaccess-dev nasm rsync
+RUN apt-get update && apt-get install -y make cmake libtool autoconf \
+    automake pkg-config flex bison libelf-dev bc libssl-dev
 
-# install codecs
-RUN apt-get install -y libopus-dev libasound2-dev libfdk-aac-dev libxext-dev \
-    libva-dev libvdpau-dev libvpx-dev libogg-dev libopus-dev libtheora-dev \
-    libvorbis-dev
-
-RUN git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg
-
-WORKDIR ffmpeg
+RUN git clone https://github.com/torvalds/linux.git linux
+WORKDIR linux
 COPY *.sh $SRC/

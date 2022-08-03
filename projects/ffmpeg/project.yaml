@@ -1,5 +1,5 @@
 homepage: "https://www.ffmpeg.org"
-language: c++
+language: c
 primary_contact: "ffmpeg-security@ffmpeg.org"
 auto_ccs:
  - "michaelni@gmx.at"

@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y gettext flex \
     libxcb-composite0-dev libxcb-randr0-dev libxcb-render0-dev \
     libxcb-shape0-dev libxcb-xkb-dev libxcb-shm0-dev libqt5core5a \
     qtbase5-dev libqt5opengl5-dev qtdeclarative5-dev libqt5svg5-dev \
-    liba52-0.7.4-dev
+    liba52-0.7.4-dev libgcrypt20-dev 
 RUN git clone https://github.com/videolan/vlc vlc
 WORKDIR vlc
 COPY *.sh $SRC/

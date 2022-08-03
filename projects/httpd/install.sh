@@ -3,4 +3,4 @@
 svn co http://svn.apache.org/repos/asf/apr/apr/trunk srclib/apr
 ./buildconf
 ./configure CFLAGS="$CFLAGS" --with-included-apr
-make install # parallel build fails
+make -j$(nproc) || make -j$(nproc)  # parallel build may fail at first
