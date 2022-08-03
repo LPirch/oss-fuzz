@@ -39,21 +39,28 @@ RUN apt-get update && apt-get install -y git && \
     git checkout a5b53ca79684f206832fe3388164f66611405bfc && \
     apt-get remove --purge -y git
 
+
 COPY checkout_build_install_llvm.sh /root/
 # Keep all steps in the same script to decrease the number of intermediate
 # layes in docker file.
 RUN /root/checkout_build_install_llvm.sh
 RUN rm /root/checkout_build_install_llvm.sh
+# RUN apt update && apt install -y wget software-properties-common
+# RUN wget --no-check-certificate -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
+#     add-apt-repository 'deb http://apt.llvm.org/focal/   llvm-toolchain-focal-14  main' && \
+#     apt update && apt upgrade -y && \
+#     apt install -y git python3-pip clang-14 libclang-14-dev llvm-14 cmake
 
 # Setup the environment.
 ENV CC "clang"
 ENV CXX "clang++"
 ENV CCC "clang++"
+# RUN ln -s /usr/bin/clang-14 /usr/bin/clang && ln -s /usr/bin/clang++-14 /usr/bin/clang++
 
 # Build GraphExtractionPlugin
 COPY graph-extraction /tmp/graph-extraction
-RUN apt-get install -y python3 python3-pip && \
-    pip3 install click GitPython && \
+RUN apt-get update && apt-get install -y python3 python3-pip && \
+	pip3 install click GitPython && \
 	cd /tmp/graph-extraction && \
 	mkdir build && cd build && \
 	cmake ../ && \
@@ -64,6 +71,6 @@ RUN apt-get install -y python3 python3-pip && \
 # FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION is described at
 # http://libfuzzer.info#fuzzer-friendly-build-mode
 
-ENV CFLAGS "-O1 -fno-omit-frame-pointer -gline-tables-only -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION"
+ENV CFLAGS ""
 ENV CXXFLAGS_EXTRA "-stdlib=libc++"
 ENV CXXFLAGS "$CFLAGS $CXXFLAGS_EXTRA"
