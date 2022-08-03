@@ -19,6 +19,7 @@ projects/fuzzers, running them etc."""
 
 from __future__ import print_function
 from multiprocessing.dummy import Pool as ThreadPool
+from joblib import delayed, Parallel, parallel_backend
 import argparse
 import datetime
 import errno
@@ -30,6 +31,8 @@ import subprocess
 import sys
 import templates
 import time
+import gzip
+from zipfile import ZipFile, ZIP_STORED
 from shutil import make_archive, rmtree
 
 import constants
@@ -205,6 +208,10 @@ def parse_args(parser, args=None):
   # TODO(metzman): Fix this.
   is_external = getattr(parsed_args, 'external', False)
   parsed_args.project = Project(parsed_args.project, is_external, parsed_args.commit)
+
+  if parsed_args.build_dir is not None:
+    global BUILD_DIR
+    BUILD_DIR = os.path.join(OSS_FUZZ_DIR, parsed_args.build_dir)
   return parsed_args
 
 
@@ -279,6 +286,11 @@ def get_parser():  # pylint: disable=too-many-statements
                                     action='store_true',
                                     default=False,
                                     help='enable GraphExtractionPlugin when building the target')
+  build_fuzzers_parser.add_argument('--cpus',
+                                    dest='cpus',
+                                    type=float,
+                                    default=8.0,
+                                    help='number of CPUs to use (may be float)')
   build_fuzzers_parser.add_argument('--zip',
                                     dest='zip_results',
                                     action='store_true',
@@ -302,6 +314,11 @@ def get_parser():  # pylint: disable=too-many-statements
                                     action='store_true',
                                     default=False,
                                     help='whether to pass the current UID:GID to the docker container')
+  build_fuzzers_parser.add_argument('--build-dir',
+                                    type=str,
+                                    default=None,
+                                    dest='build_dir',
+                                    help='change the default output dir root')
   build_fuzzers_parser.set_defaults(clean=False)
 
   check_build_parser = subparsers.add_parser(
@@ -521,7 +538,7 @@ def build_image_impl(project, commit, cache=True, pull=False):
 
   build_args += [
       '-t',
-      'gcr.io/%s/%s_%s' % (image_project, image_name, commit), '--file', dockerfile_path
+      'gcr.io/%s/%s' % (image_project, image_name), '--file', dockerfile_path
   ]
   build_args.append(docker_build_dir)
   return docker_build(build_args)
@@ -646,6 +663,7 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
     noinst,
     dwarf_version,
     graph_plugin,
+    cpus,
     mount_path=None,
     zip_results=False,
     passuser=False):
@@ -659,16 +677,18 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
     # Clean old and possibly conflicting artifacts in project's out directory.
     docker_run([
         '-m', DOCKER_MEMLIMIT,
+        f'--cpus={cpus}',
         '-v',
         '%s:/out' % _get_absolute_path(project.out), '-t',
-        'gcr.io/oss-fuzz/%s_%s' % (project.name, commit), 'timeout', '-k', '120', f'{DOCKER_TIMEOUT}{DOCKER_TIMEOUT_UNIT}', '/bin/bash', '-c', 'rm -rf /out/*'
+        'gcr.io/oss-fuzz/%s' % project.name, 'timeout', '-k', '120', f'{DOCKER_TIMEOUT}{DOCKER_TIMEOUT_UNIT}', '/bin/bash', '-c', 'rm -rf /out/*'
     ])
 
     docker_run([
         '-m', DOCKER_MEMLIMIT,
+        f'--cpus={cpus}',
         '-v',
         '%s:/work' % _get_absolute_path(project.work), '-t',
-        'gcr.io/oss-fuzz/%s_%s' % (project.name, commit), 'timeout', '-k', '120', f'{DOCKER_TIMEOUT}{DOCKER_TIMEOUT_UNIT}', '/bin/bash', '-c', 'rm -rf /work/*'
+        'gcr.io/oss-fuzz/%s' % project.name, 'timeout', '-k', '120', f'{DOCKER_TIMEOUT}{DOCKER_TIMEOUT_UNIT}', '/bin/bash', '-c', 'rm -rf /work/*'
     ])
 
   else:
@@ -712,10 +732,11 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
 
   command += [
       '-m', DOCKER_MEMLIMIT,
+      f'--cpus={cpus}',
       '-v',
       '%s:/out' % _get_absolute_path(project.out), '-v',
       '%s:/work' % _get_absolute_path(project.work), '-t',
-      'gcr.io/oss-fuzz/%s_%s' % (project.name, commit),
+      'gcr.io/oss-fuzz/%s' % project.name,
       'timeout', '-k', '120', '-s', 'KILL', f'{DOCKER_TIMEOUT}{DOCKER_TIMEOUT_UNIT}',
       'compile'
   ]
@@ -734,27 +755,53 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
           '-t',
           '-v', '%s:/out' % _get_absolute_path(project.out),
           '-v', '%s:/work' % _get_absolute_path(project.work),
-          'gcr.io/oss-fuzz/%s_%s' % (project.name, commit),
+          # 'gcr.io/oss-fuzz/%s_%s' % (project.name, commit),
+          'gcr.io/oss-fuzz/%s' % project.name,
           'timeout', '-k', '120', f'{DOCKER_TIMEOUT}{DOCKER_TIMEOUT_UNIT}', 
           '/bin/bash', '-c', f'chown -R {os.getuid()}:{os.getgid()} /out /work'
       ])
   if zip_results:
-    print(f"Zipping results in {project.out}")
-    target_zip = f"{project.out}.zip"
-    if os.path.exists(target_zip):
-      os.remove(target_zip)
-    # clean up other files of ozz-fuzz
-    for root, dirs, files in os.walk(project.out):
-      for filename in files:
-        if not filename.startswith('AST_') or not filename.endswith('.json'):
-          os.remove(os.path.join(root, filename))
-    make_archive(project.out, 'zip', project.out)
-    rmtree(project.out)
-    os.makedirs(project.out, exist_ok=True)
-    out_parent = os.path.dirname(project.out.rstrip('/'))
-    stem = os.path.basename(out_parent)
-    os.rename(target_zip, os.path.join(project.out, f"{stem}.zip"))
+    fast_zipping(project)
   return True
+
+
+def fast_zipping(project, jobs=-1):
+  n_jobs = jobs
+  if n_jobs <= 0:
+    n_jobs = os.cpu_count()
+  print(f"Fast zipping results in {project.out} using {n_jobs} jobs")
+  target_zip = f"{project.out}.zip"
+  if os.path.exists(target_zip):
+    os.remove(target_zip)
+  
+  # gzip all JSON ASTs
+  json_filter = lambda root, f: root.startswith(f'{project.out}/{project.name}') and f.startswith('AST_') and f.endswith('.json')
+  json_files = [os.path.join(root, f) for root, _, files in os.walk(project.out) for f in files if json_filter(root, f)]
+  with parallel_backend('loky'):
+    Parallel(n_jobs=n_jobs)(delayed(
+      _gzip_single)(f,) for f in json_files)
+  # make_archive(project.out, 'zip', project.out)
+  with ZipFile(target_zip, mode='w', compression=ZIP_STORED) as z:
+    for json_file in json_files:
+      gz_file = f'{json_file}.gz'
+      arcname = gz_file
+      if arcname.startswith(project.out):
+        arcname = arcname[len(project.out):].lstrip('/')
+      z.write(gz_file, arcname=arcname)
+  rmtree(project.out)
+  os.makedirs(project.out, exist_ok=True)
+  out_parent = os.path.dirname(project.out.rstrip('/'))
+  stem = os.path.basename(out_parent)
+  os.rename(target_zip, os.path.join(project.out, f"{stem}.zip"))
+
+
+def _gzip_single(in_file, suffix='.gz'):
+  out_file = f'{in_file}{suffix}'
+  with open(in_file, 'rb') as f:
+    content = f.read()
+  with gzip.open(out_file, 'wb') as f:
+    f.write(content)
+  os.remove(in_file)
 
 
 def build_fuzzers(args):
@@ -770,6 +817,7 @@ def build_fuzzers(args):
                             args.noinst,
                             args.dwarf_version,
                             args.graph_plugin,
+                            args.cpus,
                             mount_path=args.mount_path,
                             zip_results=args.zip_results,
                             passuser=args.passuser)
