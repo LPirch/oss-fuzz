@@ -1,5 +1,5 @@
 #!/bin/bash -eu
-
+targets="$@"
 # patch unknown args for clang
 if [ -f arch/x86/Makefile ]; then
         sed -ri 's/^(\s+)(KBUILD_CFLAGS.*maccumulate-outgoing-args)/\1#\2/g' arch/x86/Makefile
@@ -9,4 +9,5 @@ if [ -f arch/x86/Makefile_32.cpu ]; then
 fi
 
 make CC=clang -j$(nproc) alldefconfig || make CC=clang -j$(nproc) defconfig # defconfig on older versions. alternative: allmodconfig
-make -j$(nproc) CC=clang EXTRA_CFLAGS="$CFLAGS -no-integrated-as -f-fno-zero-initialized-in-bss"
+make clean
+make -j$(nproc) CC=clang EXTRA_CFLAGS="$CFLAGS -no-integrated-as -f-fno-zero-initialized-in-bss" $targets

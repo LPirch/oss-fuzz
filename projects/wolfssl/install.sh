@@ -1,4 +1,6 @@
 #!/bin/bash -eu
+targets="$@"
 sh autogen.sh
 ./configure CFLAGS="$CFLAGS" --disable-x11
-make -j$(nproc) install
+make clean
+make -j$(nproc) $targets

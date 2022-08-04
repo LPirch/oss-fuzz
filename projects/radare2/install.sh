@@ -1,3 +1,5 @@
 #!/bin/bash -eu
+targets="$@"
 
-./sys/install.sh --without-pull
+make clean
+make -j$(nproc) $targets

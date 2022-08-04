@@ -1,6 +1,6 @@
 #!/bin/sh -e
-
+targets="$@"
 mkdir build
 cd build
-../configure
-make
+../configure CFLAGS="$CFLAGS"
+make -j$(nproc) $targets

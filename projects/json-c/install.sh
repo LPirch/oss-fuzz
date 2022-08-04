@@ -1,11 +1,11 @@
 #!/bin/bash -eu
-
+targets="$@"
 if [ -f autogen.sh ]; then
-  sh autogen.sh
-  ./configure CFLAGS="$CFLAGS"
-  make -j$(nproc)
+  ./autogen.sh || ./autogen.sh
+  ./configure CFLAGS="$CFLAGS"    
 else
   mkdir build && cd build
   cmake ..
-  make -j$(nproc)
 fi
+make clean
+make -j$(nproc) $targets

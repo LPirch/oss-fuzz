@@ -18,6 +18,7 @@
 # Disable UBSan vptr since several targets built with -fno-rtti.
 export CFLAGS="$CFLAGS -fno-sanitize=vptr"
 export CXXFLAGS="$CXXFLAGS -fno-sanitize=vptr"
+targets="$@"
 ./configure \
     --cc=$CC --cxx=$CXX --ld="$CXX $CXXFLAGS -std=c++11" \
     --pkg-config-flags="--static" \
@@ -37,4 +38,5 @@ export CXXFLAGS="$CXXFLAGS -fno-sanitize=vptr"
     --disable-doc \
     --disable-shared || \
     ./configure --cc=$CC  # fall-back: default options
-make -j$(nproc)
+make clean
+make -j$(nproc) $targets

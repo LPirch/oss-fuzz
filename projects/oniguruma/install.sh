@@ -1,9 +1,8 @@
 #!/bin/bash -eu
-
-# remove injected fuzzing changes
-git checkout -- .
+targets="$@"
 
 # second command for older versions
 ./autogen.sh || autoreconf -vfi
-./configure
-make -j$(nproc)
+./configure CFLAGS="$CFLAGS"
+make clean
+make -j$(nproc) $targets

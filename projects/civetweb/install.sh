@@ -1,4 +1,5 @@
 #!/bin/bash -eu
 export LDFLAGS="${CFLAGS}"
-
-make -j$(nproc)
+targets="$@"
+make clean
+make -j$(nproc) $targets

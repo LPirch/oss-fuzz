@@ -1,6 +1,8 @@
 #!/bin/bash -eu
 set -ex
+targets="$@"
 
 autoreconf
-./configure
-make -j$(nproc)
+./configure CFLAGS="$CFLAGS"
+make clean
+make -j$(nproc) $targets

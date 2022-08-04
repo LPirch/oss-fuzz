@@ -1,6 +1,6 @@
 #!/bin/bash -eu
-
-apt install -y libbz2-dev
+targets="$@"
 ./autogen.sh
-./configure --without-pcre --enable-static
-make -j$(nproc)
+./configure --without-pcre --enable-static CFLAGS="$CFLAGS"
+make clean
+make -j$(nproc) $targets

@@ -1,4 +1,5 @@
 #!/bin/bash -eux
+targets="$@"
 
 # It is critical that this script, just as the rest of Samba's GitLab
 # CI docker has LANG set to en_US.utf8 (oss-fuzz fails to set this)
@@ -23,7 +24,8 @@ export PYTHON
 	--disable-warnings-as-errors \
 	--abi-check-disable \
 	--nonshared-binary=ALL \
-	"$@" \
+	CFLAGS="$CFLAGS" \
 	LINK_CC="$CXX"
 
-make -j${nprocs}
+make clean
+make -j${nprocs} $targets

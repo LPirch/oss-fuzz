@@ -1,4 +1,5 @@
 #!/bin/bash -eu
-
-./configure CFLAGS="$CFLAGS" 
-make -j$(nproc) install
+targets="$@"
+./configure CFLAGS="$CFLAGS"
+make clean
+make -j$(nproc) $targets

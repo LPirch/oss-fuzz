@@ -1,4 +1,5 @@
 #!/bin/bash -eu
-
+targets="$@"
 ./configure --static-build --extra-cflags="${CFLAGS}" --extra-ldflags="${CFLAGS}"
-make -j$(nproc)
+make clean
+make -j$(nproc) $targets

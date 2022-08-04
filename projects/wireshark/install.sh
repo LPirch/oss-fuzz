@@ -1,4 +1,9 @@
 #!/bin/bash -eu
 
+targets="$@"
 mkdir build && cd build
-cmake ../
+if [ -z $targets ]; then
+    cmake ../
+else
+    cmake ../ --target $targets
+fi

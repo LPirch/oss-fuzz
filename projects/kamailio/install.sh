@@ -17,5 +17,6 @@
 
 export CC_OPT="${CFLAGS}"
 export LD_EXTRA_OPTS="${CFLAGS}"
-
-make -j$(nproc)
+targets="$@"
+make clean
+make -j$(nproc) $targets
