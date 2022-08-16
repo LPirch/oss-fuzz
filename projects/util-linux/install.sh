@@ -1,10 +1,13 @@
-#!/bin/bash -eu
-set -ex
+#!/bin/bash -eux
 targets="$@"
-
-export LC_CTYPE=C.UTF-8
-
-./autogen.sh
-./configure --disable-all-programs --enable-libuuid --enable-libfdisk --enable-last --enable-libmount --enable-libblkid CFLAGS="$CFLAGS"
+CFLAGS="$(gen_cflags)"
 make clean
-make -j$(nproc) $targets
+clean_ast_files $OUT
+
+set +e
+build_logfile="${WORK}/logs/build.log"
+make -k -j$(nproc) $targets >> $build_logfile 2>&1
+if grep "No rule to make target" $build_logfile >/dev/null ; then
+    make -k -j$(nproc) >> $build_logfile 2>&1
+fi
+set -e

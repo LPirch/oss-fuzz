@@ -16,6 +16,8 @@
 
 FROM gcr.io/oss-fuzz-base/base-builder
 
+RUN apt update && apt install -y autoconf autogen automake libtool pkg-config python \
+                                 libasound2-dev libflac-dev libogg-dev libopus-dev libvorbis-dev
 RUN git clone https://github.com/libsndfile/libsndfile.git libsndfile
 
 WORKDIR $SRC/libsndfile

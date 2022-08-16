@@ -1,5 +1,6 @@
 FROM gcr.io/oss-fuzz-base/base-builder
-RUN apt-get update && apt-get install -y wget pkg-config
+RUN apt-get update && apt-get install -y wget pkg-config 
+RUN alias gmake=make
 RUN git clone https://github.com/radareorg/radare2 radare2
 
 # install capstone5 with position independent code

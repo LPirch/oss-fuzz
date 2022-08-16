@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y make autoconf automake libtool build-es
 # install codecs
 RUN apt-get install -y libopus-dev libasound2-dev libfdk-aac-dev libxext-dev \
     libva-dev libvdpau-dev libvpx-dev libogg-dev libopus-dev libtheora-dev \
-    libvorbis-dev
+    libvorbis-dev libalut-dev
 
 RUN git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg
 

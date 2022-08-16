@@ -15,7 +15,8 @@
 ################################################################################
 
 FROM gcr.io/oss-fuzz-base/base-builder
-RUN apt-get update && apt-get install -y autoconf automake autopoint bison libtool pkg-config
+RUN apt-get update && apt-get install -y autoconf automake autopoint bison libtool pkg-config \
+                                        libpam0g-dev gettext libgettextpo-dev
 RUN git clone https://github.com/karelzak/util-linux
 WORKDIR $SRC/util-linux
 COPY *.sh $SRC/
