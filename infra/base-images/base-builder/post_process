@@ -1,0 +1,33 @@
+#!/bin/bash
+
+if [ "$#" -lt 2 ]; then
+    echo "Usage: post_process prefix base_dir out_file targets..."
+    exit 1
+fi
+
+prefix=$1; shift
+base_dir=$1; shift
+out_file=$1; shift
+
+if [ ! -f $out_file ]; then
+    echo "target,type,success" > $out_file
+fi
+
+# remove broken AST from failed extractions and create build status report
+for t in "$@"; do
+    if [ -f "${base_dir}/${t}" ]; then
+        success="1"
+    else
+        success="0"
+        # remove AST file if compilation failed
+        project=$(basename $(pwd))
+        path=$(dirname "${t}")
+        stem=$(basename "${t}")
+        stem=${stem%.o}
+        ast_file="${OUT}/${project}/${path}/AST_${stem}.c.json"
+        if [ -f $ast_file ]; then
+            rm $ast_file
+        fi
+    fi
+    echo "${t},${prefix},${success}" >> $out_file
+done

@@ -1,0 +1,17 @@
+#!/bin/bash -eu
+
+targets="$@"
+src_dir="$(pwd)"
+
+for f in $(find "${src_dir}" -type f -name "*.o"); do
+        f="${f#./}"
+        rel_f="${f#$src_dir/}"
+        if ! (printf '%s\0' "${targets[@]}" | grep -Fxqz -- "$rel_f"); then
+                project="$(basename $src_dir)"
+                ast_dir="${OUT}/${project}/$(dirname $rel_f)"
+                stem="${f%.o}"
+                stem="$(basename $stem)"
+                ast_file="${ast_dir}/AST_${stem}.c.json"
+                rm "${ast_file}"
+        fi
+done

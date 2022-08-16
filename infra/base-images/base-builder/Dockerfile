@@ -31,7 +31,7 @@ RUN dpkg --add-architecture i386 && \
         patchelf \
         rsync \
         subversion \
-        zip
+        zip vim
 
 # Build and install latest Python 3 (3.8.3).
 ENV PYTHON_VERSION 3.8.3
@@ -141,7 +141,10 @@ RUN precompile_afl
 COPY precompile_honggfuzz /usr/local/bin/
 RUN precompile_honggfuzz
 
-COPY cargo compile compile_afl compile_dataflow compile_libfuzzer compile_honggfuzz \
+COPY cargo compile \
+    extract_ast clean_ast_files post_process clean_nontargets \
+    check_targets gen_cflags \
+    compile_afl compile_dataflow compile_libfuzzer compile_honggfuzz \
     compile_go_fuzzer debug_afl srcmap \
     write_labels.py bazel_build_fuzz_tests \
     # Go, java, and swift installation scripts.

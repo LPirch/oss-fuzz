@@ -1,0 +1,13 @@
+#!/bin/bash -eu
+cflags=""
+
+# add graph-extraction flags
+cflags="-fplugin=/usr/local/lib/libgraph_extraction_plugin.so \
+-Xclang -plugin-arg-graph-extraction -Xclang --basedir -Xclang -plugin-arg-graph-extraction -Xclang $SRC \
+-Xclang -plugin-arg-graph-extraction -Xclang --out-dir -Xclang -plugin-arg-graph-extraction -Xclang $OUT \
+$cflags"
+
+# disable warnings as error
+cflags="$cflags -Wno-error"
+
+echo "$cflags"

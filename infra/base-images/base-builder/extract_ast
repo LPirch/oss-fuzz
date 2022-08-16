@@ -1,0 +1,80 @@
+#!/bin/bash -eu
+
+targets="$@"
+CFLAGS="$(gen_cflags)"
+
+echo "---------------------------------------------------------------"
+if [[ ! -z "$COMMIT" && "$ROLLBACK" -eq "1" ]] ; then
+	echo "INFO: Rollback to commit $COMMIT of project $PROJECT"
+	directories=$(find $SRC -maxdepth 1 -type d)
+	checkout_success=0
+	for directory in $directories; do
+		pushd $directory >/dev/null  
+		if [ -d .git ]; then         
+			if [ -f $(git rev-parse --git-dir)/shallow ]; then
+				echo "INFO: git unshallow $directory of project $PROJECT"
+				git pull --unshallow
+			fi
+			echo "INFO: Try to checkout $COMMIT of project $PROJECT in directory $directory"
+			git fetch --tags
+			if [ $(git rev-parse HEAD) != $COMMIT ];
+			then
+				if git checkout $COMMIT; then
+					echo "INFO: checked out commit $COMMIT of project $PROJECT"
+					checkout_success=1
+					popd >/dev/null
+					break
+				fi
+			else
+				echo "INFO: Skipping checkout. Repository already at $COMMIT"
+				checkout_success=1
+				popd >/dev/null
+				break
+			fi
+			echo "INFO: checkout $COMMIT of project $PROJECT in directory $directory failed"
+		fi
+		popd >/dev/null
+	done
+	if [ $checkout_success -eq 0 ]; then
+		echo "ERROR: Rollback to commit $COMMIT of project $PROJECT failed."
+		exit 1
+	fi
+fi
+
+echo "---------------------------------------------------------------"
+echo "CC=$CC"
+echo "CXX=$CXX"
+echo "CFLAGS=$CFLAGS"
+echo "---------------------------------------------------------------"
+
+CONFIG_CMD="bash -eux $SRC/config.sh $CFLAGS"
+
+echo "INFO: Configuring project"
+echo "==============================================================="
+echo "${CONFIG_CMD}"
+echo "==============================================================="
+
+$CONFIG_CMD
+
+BUILD_CMD="bash -eux $SRC/install.sh $targets"
+
+echo "INFO: Build with GraphExtractionPlugin. New CFLAGS/CXXFLAGS:"
+echo "==============================================================="
+echo "${BUILD_CMD}"
+echo "==============================================================="
+
+mkdir -p "${WORK}/logs"
+$BUILD_CMD # > $OUT/build.log 2>&1
+
+echo "==============================================================="
+echo "Post-Processing"
+echo "==============================================================="
+
+stats_file=$WORK/build_stats.csv
+if [ -f $stats_file ]; then
+	rm $stats_file
+fi
+post_process "main" $(pwd) "${stats_file}" "${targets[@]}"
+post_process "extra" $(pwd) "${stats_file}" "${extra_targets[@]}"
+clean_nontargets "${targets[@]}" "${extra_targets[@]}"
+check_targets $stats_file

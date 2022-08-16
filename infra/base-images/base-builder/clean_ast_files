@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if [ $# -lt 1 ]; then
+	echo "Usage: clean_ast_files directory"
+	exit 1
+fi
+
+target_dir=$1
+
+for f in $(find $target_dir -type f -name "AST_*.json"); do
+	rm $f
+done
+
+# clean up empty dirs (except target_dir itself)
+if [ "$(ls -A $target_dir)" ]; then
+	find $target_dir/* -empty -type d -delete
+fi
