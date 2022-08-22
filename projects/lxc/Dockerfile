@@ -21,6 +21,7 @@ RUN apt-get update && \
         libselinux1-dev libapparmor-dev libssl-dev ninja-build
 RUN pip3 install --user --upgrade meson cmake
 ENV PATH="/root/.local/bin:${PATH}"
-RUN git clone https://github.com/lxc/lxc
-WORKDIR lxc
+
+RUN mkdir -p $SRC/lxc
+WORKDIR $SRC/lxc
 COPY *.sh $SRC/

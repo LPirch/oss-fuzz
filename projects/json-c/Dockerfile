@@ -16,6 +16,7 @@
 
 FROM gcr.io/oss-fuzz-base/base-builder
 RUN apt-get update && apt-get install -y make cmake libtool autoconf automake pkg-config
-RUN git clone https://github.com/json-c/json-c.git json-c
-WORKDIR json-c
+
+RUN mkdir -p $SRC/json-c
+WORKDIR $SRC/json-c
 COPY *.sh $SRC/

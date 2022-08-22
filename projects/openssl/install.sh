@@ -1,21 +1,20 @@
-#!/bin/bash -eu
+#!/bin/bash -eux
 targets="$@"
 
-./config
-sed -i "s#^CFLAG=#CFLAG = $CFLAGS #" Makefile
+set +u
+source $HOME/perl5/perlbrew/etc/bashrc
+perlbrew use perl-5.20.3
+set -u
+
 make clean
 clean_ast_files $OUT
+cflags="$(gen_cflags)"
 
 set +e
-error_file="${SRC}/errors.log"
+build_logfile="${WORK}/logs/build.log"
+if [ -f $build_logfile ]; then rm $build_logfile; fi
 # parallel build fails in older versions but can recover if started again
-make -k -j$(nproc) $targets 2>$error_file || make -k -j$(nproc) $targets 2>$error_file
-if grep "No rule to make target" $error_file >/dev/null ; then
-    make -k -j$(nproc) || make -k -j$(nproc)
-fi
-if [ -f $error_file ]; then 
-    rm $error_file
-fi
+make CFLAGS="$cflags" -k -j$(nproc) $targets >> $build_logfile 2>&1 || make CFLAGS="$cflags" -k -j$(nproc) $targets >> $build_logfile 2>&1
 set -e
 
 

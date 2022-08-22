@@ -16,6 +16,7 @@
 
 FROM gcr.io/oss-fuzz-base/base-builder
 RUN apt-get update && apt-get install -y make cmake libpcap-dev
-RUN git clone https://github.com/the-tcpdump-group/tcpdump.git
-WORKDIR tcpdump
+
+RUN mkdir -p $SRC/tmpdump
+WORKDIR $SRC/tcpdump
 COPY *.sh $SRC/

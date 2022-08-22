@@ -16,8 +16,8 @@
 
 FROM gcr.io/oss-fuzz-base/base-builder
 RUN apt-get update && apt-get install -y libz-dev libtool pkg-config autoconf libbz2-dev
-RUN git clone https://github.com/lighttpd/lighttpd1.4
 
-WORKDIR $SRC/lighttpd1.4
+
+RUN mkdir -p $SRC/lighttpd
+WORKDIR $SRC/lighttpd
 COPY *.sh $SRC/
-COPY fuzz_* $SRC/

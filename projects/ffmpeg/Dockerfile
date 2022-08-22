@@ -26,7 +26,6 @@ RUN apt-get install -y libopus-dev libasound2-dev libfdk-aac-dev libxext-dev \
     libva-dev libvdpau-dev libvpx-dev libogg-dev libopus-dev libtheora-dev \
     libvorbis-dev libalut-dev
 
-RUN git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg
-
-WORKDIR ffmpeg
+RUN mkdir $SRC/ffmpeg
+WORKDIR $SRC/ffmpeg
 COPY *.sh $SRC/

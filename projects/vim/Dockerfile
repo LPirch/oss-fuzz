@@ -16,7 +16,8 @@
 
 FROM gcr.io/oss-fuzz-base/base-builder
 RUN apt-get update && apt-get install -y libncurses-dev
-RUN git clone https://github.com/vim/vim.git vim
-WORKDIR vim
+
+RUN mkdir -p $SRC/vim
+WORKDIR $SRC/vim
 COPY *.sh $SRC/
 

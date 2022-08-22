@@ -18,6 +18,6 @@ FROM gcr.io/oss-fuzz-base/base-builder
 RUN apt-get update && \
     apt-get install -y make autoconf
 
-RUN git clone https://github.com/ImageMagick/ImageMagick.git imagemagick
-WORKDIR imagemagick
+RUN mkdir -p $SRC/ImageMagick
+WORKDIR $SRC/ImageMagick
 COPY *.sh $SRC/

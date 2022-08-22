@@ -15,8 +15,9 @@
 ################################################################################
 
 FROM gcr.io/oss-fuzz-base/base-builder
-RUN apt-get update && apt-get install -y bison flex
-RUN git clone https://github.com/kamailio/kamailio
+RUN apt-get update && apt-get install -y bison flex libmysqlclient-dev libpq-dev  libexpat1-dev libxml2-dev \
+                                        libradiusclient-ng-dev libsqlite3-dev
 
+RUN mkdir -p $SRC/kamailio
 WORKDIR $SRC/kamailio
 COPY *.sh $SRC/

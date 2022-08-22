@@ -17,7 +17,7 @@
 FROM gcr.io/oss-fuzz-base/base-builder
 RUN apt-get update && apt-get install -y make autoconf automake libtool \
     libfdt-dev libpixman-1-dev zlib1g-dev patchelf wget \
-    libattr1 libattr1-dev libcap-ng-dev pkg-config
+    libattr1 libattr1-dev libcap-ng-dev pkg-config libglib2.0-dev python2.7
 # Ninja in the apt repos is too old. Get it directly from github
 RUN wget https://github.com/ninja-build/ninja/releases/latest/download/ninja-linux.zip \
     && unzip ninja-linux.zip \
@@ -25,7 +25,8 @@ RUN wget https://github.com/ninja-build/ninja/releases/latest/download/ninja-lin
     && mv ninja /usr/bin/ninja
 ADD https://download.gnome.org/sources/glib/2.67/glib-2.67.6.tar.xz $SRC
 RUN tar xvJf $SRC/glib-2.67.6.tar.xz
-RUN git clone --depth 1 https://git.qemu.org/git/qemu.git qemu
-WORKDIR qemu
+
+RUN mkdir -p $SRC/qemu
+WORKDIR $SRC/qemu
 COPY *.sh $SRC/
 

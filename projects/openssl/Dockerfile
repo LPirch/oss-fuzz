@@ -15,7 +15,12 @@
 ################################################################################
 
 FROM gcr.io/oss-fuzz-base/base-builder
-RUN apt-get update && apt-get install -y make
-RUN git clone https://github.com/openssl/openssl.git openssl
-WORKDIR openssl
+RUN apt-get update && apt-get install -y make perlbrew libssl-dev
+
+# patch perl to an old version because older opsenssl versions rely on deprecated perl features
+RUN perlbrew init && echo "source ~/perl5/perlbrew/etc/bashrc" >> ~/.profile
+RUN perlbrew install -n -j8 5.20.3
+
+RUN mkdir -p $SRC/openssl
+WORKDIR $SRC/openssl
 COPY *.sh $SRC/

@@ -15,8 +15,8 @@
 ################################################################################
 
 FROM gcr.io/oss-fuzz-base/base-builder
-RUN apt-get update && apt-get install -y make autoconf automake libtool libssl-dev liblzo2-dev libpam-dev 
+RUN apt-get update && apt-get install -y make autoconf automake libtool libssl-dev liblzo2-dev libpam-dev net-tools
 
-RUN git clone https://github.com/OpenVPN/openvpn openvpn
-WORKDIR openvpn
+RUN mkdir -p $SRC/openvpn
+WORKDIR $SRC/openvpn
 COPY *.sh $SRC/

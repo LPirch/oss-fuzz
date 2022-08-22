@@ -1,21 +1,21 @@
 #!/bin/bash -eu
 
 targets="$@"
-mkdir build && cd build
 clean_ast_files $OUT
 
 set +e
-error_file="${SRC}/errors.log"
+build_logfile="${WORK}/logs/build.log"
+if [ -f $build_logfile ]; then rm $build_logfile; fi
 
-if [ -z $targets ]; then
-    cmake ../ --clean-first --build -- -k  2>$error_file
+if [ -z "${targets[@]}" ]; then
+    cmake --build . --clean-first -- -k >> $build_logfile 2>&1
 else
-    cmake ../ --clean-first --target $targets --build -- -k  2>$error_file
-    if grep "No rule to make target" $error_file >/dev/null ; then
-        cmake ../ --clean-first --build -- -k  2>$error_file
-    fi
-fi
-if [ -f $error_file ]; then 
-    rm $error_file
+    for t in ${targets[@]}; do
+        d=$(dirname $t)
+        stem=$(basename $t)
+        pushd $d
+        cmake --build . --clean-first --target $stem >> $build_logfile 2>&1
+        popd
+    done
 fi
 set -e

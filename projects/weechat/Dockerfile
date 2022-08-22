@@ -5,7 +5,8 @@ RUN apt-get update && apt-get install -y libtool autoconf automake \
                                 zlib1g-dev libcurl4-openssl-dev gettext \
                                 libghc-gnutls-dev libzstd-dev
 
-RUN git clone https://github.com/weechat/weechat.git
-WORKDIR weechat
 
+
+RUN mkdir -p $SRC/weechat
+WORKDIR $SRC/weechat
 COPY *.sh $SRC/

@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y libpcre3 libpcre3-dev \
                                         libtool-bin autoconf automake \
                                         flex bison pkg-config
 
-RUN git clone https://github.com/apache/httpd.git
-WORKDIR httpd
+
+RUN mkdir -p $SRC/httpd
+WORKDIR $SRC/httpd
 COPY *.sh $SRC/

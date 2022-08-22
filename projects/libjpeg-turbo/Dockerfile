@@ -16,7 +16,7 @@
 
 FROM gcr.io/oss-fuzz-base/base-builder
 RUN apt-get update && apt-get install -y make yasm cmake
-RUN git clone https://github.com/libjpeg-turbo/libjpeg-turbo
 
-WORKDIR libjpeg-turbo
+RUN mkdir -p $SRC/libjpeg-turbo
+WORKDIR $SRC/libjpeg-turbo
 COPY *.sh $SRC/

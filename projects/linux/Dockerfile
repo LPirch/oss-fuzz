@@ -18,6 +18,6 @@ FROM gcr.io/oss-fuzz-base/base-builder
 RUN apt-get update && apt-get install -y make cmake libtool autoconf \
     automake pkg-config flex bison libelf-dev bc libssl-dev
 
-RUN git clone https://github.com/torvalds/linux.git linux
-WORKDIR linux
+RUN mkdir -p $SRC/linux
+WORKDIR $SRC/linux
 COPY *.sh $SRC/

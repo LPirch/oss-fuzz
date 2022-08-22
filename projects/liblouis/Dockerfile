@@ -17,6 +17,7 @@
 FROM gcr.io/oss-fuzz-base/base-builder
 RUN apt-get update && apt-get install -y make autoconf automake libtool \
   pkg-config zlib1g-dev libpci-dev
-RUN git clone https://github.com/liblouis/liblouis
+
+RUN mkdir -p $SRC/liblouis
 WORKDIR $SRC/liblouis
 COPY *.sh $SRC/
