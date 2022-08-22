@@ -1,7 +1,15 @@
 #!/bin/bash -eu
 
-targets="$@"
 CFLAGS="$(gen_cflags)"
+targets=()
+extra_targets=()
+while getopts ":t:e:" opt; do
+    case "${opt}" in
+        t) targets+=("${OPTARG}") ;;
+        e) extra_targets+=("${OPTARG}") ;;
+    esac
+done
+shift $((OPTIND-1))
 
 echo "---------------------------------------------------------------"
 if [[ ! -z "$COMMIT" && "$ROLLBACK" -eq "1" ]] ; then
@@ -56,19 +64,15 @@ echo "==============================================================="
 
 $CONFIG_CMD
 
-BUILD_CMD="bash -eux $SRC/install.sh $targets"
+BUILD_CMD="bash -eux $SRC/build.sh"
 
 echo "INFO: Build with GraphExtractionPlugin. New CFLAGS/CXXFLAGS:"
 echo "==============================================================="
-echo "${BUILD_CMD}"
+echo "${BUILD_CMD} ${targets[@]} ${extra_targets[@]}"
 echo "==============================================================="
 
 mkdir -p "${WORK}/logs"
-$BUILD_CMD # > $OUT/build.log 2>&1
-
-echo "==============================================================="
-echo "Post-Processing"
-echo "==============================================================="
+$BUILD_CMD  ${targets[@]} ${extra_targets[@]}
 
 stats_file=$WORK/build_stats.csv
 if [ -f $stats_file ]; then
@@ -77,4 +81,18 @@ fi
 post_process "main" $(pwd) "${stats_file}" "${targets[@]}"
 post_process "extra" $(pwd) "${stats_file}" "${extra_targets[@]}"
 clean_nontargets "${targets[@]}" "${extra_targets[@]}"
-check_targets $stats_file
+
+if  check_targets $stats_file; then
+	exit 0
+else 
+	echo "==============================================================="
+	echo "Targeted build failed. Rebuilding with default target."
+	echo "==============================================================="
+	rm $stats_file
+	$BUILD_CMD
+	post_process "main" $(pwd) "${stats_file}" "${targets[@]}"
+	post_process "extra" $(pwd) "${stats_file}" "${extra_targets[@]}"
+	clean_nontargets "${targets[@]}" "${extra_targets[@]}"
+	check_targets $stats_file
+	exit $?
+fi

@@ -95,7 +95,9 @@ def main():  # pylint: disable=too-many-branches,too-many-return-statements
   args = parse_args(parser)
   if not os.path.exists(args.build_dir):
     os.mkdir(args.build_dir)
-  result = extract_asts(args.project, args.targets, args.extra_targets, args.clean, args.rollback, args.source_path, args.commit, args.cpus,
+  targets = [] if args.targets is None else [t for t_list in args.targets for t in t_list]
+  extra_targets = [] if args.extra_targets is None else [t for t_list in args.extra_targets for t in t_list]
+  result = extract_asts(args.project, targets, extra_targets, args.clean, args.rollback, args.source_path, args.commit, args.cpus,
                         mount_path=args.mount_path, zip_results=args.zip_results, passuser=args.passuser)
   return bool_to_retcode(result)
 
@@ -130,8 +132,8 @@ def get_parser():  # pylint: disable=too-many-statements
   """Returns an argparse parser."""
   parser = argparse.ArgumentParser('ast_extraction.py', description='AST extraction (based on helper.py build_fuzzers)')
   parser.add_argument('project')
-  parser.add_argument('-t','--target', action='extend', nargs=1, dest='targets', help='main make target')
-  parser.add_argument('-e','--extra', action='extend', nargs=1, dest='extra_targets', help='optional make target')
+  parser.add_argument('-t','--target', action='append', nargs=1, dest='targets', help='main make target')
+  parser.add_argument('-e','--extra', action='append', nargs=1, dest='extra_targets', help='optional make target')
   parser.add_argument('--source-path', dest='source_path', default=None, help='path of local source')
   parser.add_argument('--commit', help='project commit to rollback to', default="")
   parser.add_argument('--cpus', dest='cpus', type=float, default=8.0, help='number of CPUs to use (may be float)')
@@ -191,7 +193,8 @@ def build_image_impl(project, cache=True):
 
   build_args += [
       '-t',
-      'gcr.io/%s/%s' % (image_project, image_name), '--file', dockerfile_path
+      f'gcr.io/{image_project}/{image_name.lower()}',
+      '--file', dockerfile_path
   ]
   build_args.append(docker_build_dir)
   return docker_build(build_args)
@@ -298,7 +301,8 @@ def extract_asts(project, targets, extra_targets, clean, rollback, source_path, 
         f'--cpus={cpus}',
         '-v',
         '%s:/out' % _get_absolute_path(project.out), '-t',
-        'gcr.io/oss-fuzz/%s' % project.name, 'timeout', '-k', '120', f'{DOCKER_TIMEOUT}{DOCKER_TIMEOUT_UNIT}', '/bin/bash', '-c', 'rm -rf /out/*'
+        f'gcr.io/oss-fuzz/{project.name.lower()}',
+        'timeout', '-k', '120', f'{DOCKER_TIMEOUT}{DOCKER_TIMEOUT_UNIT}', '/bin/bash', '-c', 'rm -rf /out/*'
     ])
 
     docker_run([
@@ -306,7 +310,8 @@ def extract_asts(project, targets, extra_targets, clean, rollback, source_path, 
         f'--cpus={cpus}',
         '-v',
         '%s:/work' % _get_absolute_path(project.work), '-t',
-        'gcr.io/oss-fuzz/%s' % project.name, 'timeout', '-k', '120', f'{DOCKER_TIMEOUT}{DOCKER_TIMEOUT_UNIT}', '/bin/bash', '-c', 'rm -rf /work/*'
+        f'gcr.io/oss-fuzz/{project.name.lower()}',
+        'timeout', '-k', '120', f'{DOCKER_TIMEOUT}{DOCKER_TIMEOUT_UNIT}', '/bin/bash', '-c', 'rm -rf /work/*'
     ])
 
   else:
@@ -319,34 +324,28 @@ def extract_asts(project, targets, extra_targets, clean, rollback, source_path, 
   ]
 
   command = ['--cap-add', 'SYS_PTRACE'] + _env_to_docker_args(env)
-  if source_path:
-    workdir = _workdir_from_dockerfile(project)
-    if mount_path:
-      command += [
-          '-v',
-          '%s:%s' % (_get_absolute_path(source_path), mount_path),
-      ]
-    else:
-      if workdir == '/src':
-        logging.error('Cannot use local checkout with "WORKDIR: /src".')
-        return False
+  if not source_path:
+    raise RuntimeError("source_path must be set!")
+  workdir = _workdir_from_dockerfile(project)
 
-      command += [
-          '-v',
-          '%s:%s' % (_get_absolute_path(source_path), workdir),
-      ]
+  target_opts = []
+  for t in targets:
+    target_opts.extend(['-t', t])
+  extra_target_opts = []
+  for t in extra_targets:
+    extra_target_opts.extend(['-e', t])
 
   command += [
       '-m', DOCKER_MEMLIMIT,
-      f'--cpus={cpus}',
-      '-v',
-      '%s:/out' % _get_absolute_path(project.out), '-v',
-      '%s:/work' % _get_absolute_path(project.work), '-t',
-      'gcr.io/oss-fuzz/%s' % project.name,
+      f'--cpus={cpus}', '-t',
+      '-v', f'{_get_absolute_path(project.out)}:/out', 
+      '-v', f'{_get_absolute_path(project.work)}:/work',
+      '-v', f'{_get_absolute_path(source_path)}:{workdir}',
+      f'gcr.io/oss-fuzz/{project.name.lower()}',
       'timeout', '-k', '120', '-s', 'KILL', f'{DOCKER_TIMEOUT}{DOCKER_TIMEOUT_UNIT}',
       # '/bin/bash']
       'extract_ast'
-  ] + targets
+  ] + target_opts + extra_target_opts
 
   print("compile", time.time())
   result = docker_run(command)
@@ -359,12 +358,12 @@ def extract_asts(project, targets, extra_targets, clean, rollback, source_path, 
       # chown results
       docker_run([
           '-t',
-          '-v', '%s:/out' % _get_absolute_path(project.out),
-          '-v', '%s:/work' % _get_absolute_path(project.work),
-          # 'gcr.io/oss-fuzz/%s_%s' % (project.name, commit),
-          'gcr.io/oss-fuzz/%s' % project.name,
+          '-v', f'{_get_absolute_path(project.out)}:/out',
+          '-v', f'{_get_absolute_path(project.work)}:/work',
+          '-v', f'{_get_absolute_path(source_path)}:{workdir}',
+          f'gcr.io/oss-fuzz/{project.name.lower()}',
           'timeout', '-k', '120', f'{DOCKER_TIMEOUT}{DOCKER_TIMEOUT_UNIT}', 
-          '/bin/bash', '-c', f'chown -R {os.getuid()}:{os.getgid()} /out /work'
+          '/bin/bash', '-c', f'chown -R {os.getuid()}:{os.getgid()} /out /work {workdir}'
       ])
 
   if zip_results:
@@ -391,7 +390,6 @@ def fast_zipping(project, jobs=-1):
   if n_jobs <= 0:
     n_jobs = os.cpu_count()
 
-  print(f"Fast zipping results in {project.out} using {n_jobs} jobs")
   build_stats = os.path.join(project.out, 'build_stats.csv')
   if os.path.exists(build_stats):
     move(build_stats, os.path.dirname(project.out))
@@ -402,6 +400,8 @@ def fast_zipping(project, jobs=-1):
   # gzip all JSON ASTs
   json_filter = lambda root, f: root.startswith(f'{project.out}/{project.name}') and f.startswith('AST_') and f.endswith('.json')
   json_files = [os.path.join(root, f) for root, _, files in os.walk(project.out) for f in files if json_filter(root, f)]
+  n_jobs = min(n_jobs, len(json_files))
+  print(f"Fast zipping results in {project.out} using {n_jobs} job{'s' if n_jobs > 1 else ''}")
   with parallel_backend('loky'):
     Parallel(n_jobs=n_jobs)(delayed(
       _gzip_single)(f,) for f in json_files)

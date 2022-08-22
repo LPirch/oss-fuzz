@@ -16,6 +16,7 @@
 
 FROM gcr.io/oss-fuzz-base/base-builder
 RUN apt-get update && apt-get install -y make autoconf automake libtool
-RUN git clone https://github.com/madler/zlib.git
-WORKDIR zlib
+
+RUN mkdir -p $SRC/zlib
+WORKDIR $SRC/zlib
 COPY *.sh $SRC/

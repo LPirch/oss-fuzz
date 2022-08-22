@@ -1,25 +1,9 @@
 #!/bin/bash -eu
-# Copyright 2021 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-################################################################################
+targets="$@"
+clean_ast_files $OUT
+make clean
 
-cd gpac
-./configure --static-build --extra-cflags="${CFLAGS}" --extra-ldflags="${CFLAGS}"
-make
-
-cp $SRC/testsuite/oss-fuzzers/fuzz_parse.c .
-$CC $CFLAGS $LIB_FUZZING_ENGINE fuzz_parse.c -o $OUT/fuzz_parse \
-    -I./include -I./ ./bin/gcc/libgpac_static.a \
-    -lm -lz -lpthread -DGPAC_HAVE_CONFIG_H 
+set +e
+build_logfile="${WORK}/logs/build.log"
+if [ -f $build_logfile ]; then rm $build_logfile; fi
+make -k -j$(nproc) $targets >> $build_logfile 2>&1

@@ -1,17 +1,18 @@
 #!/bin/bash -eu
 
 targets="$@"
-src_dir="$(pwd)"
+project="$(basename $(pwd))"
 
-for f in $(find "${src_dir}" -type f -name "*.o"); do
-        f="${f#./}"
-        rel_f="${f#$src_dir/}"
-        if ! (printf '%s\0' "${targets[@]}" | grep -Fxqz -- "$rel_f"); then
-                project="$(basename $src_dir)"
-                ast_dir="${OUT}/${project}/$(dirname $rel_f)"
-                stem="${f%.o}"
-                stem="$(basename $stem)"
-                ast_file="${ast_dir}/AST_${stem}.c.json"
-                rm "${ast_file}"
+for f in $(find "${OUT}" -type f -name "*.json"); do
+        ast_file="$f"
+        f="${f#$OUT/$project/}"
+        d="$(dirname $f)"
+        stem="$(basename $f)"
+        stem="${stem#AST_}"
+        stem="${stem%.c.json}"
+        if ! (printf '%s\n' "${targets[@]}" | grep -- "$d/$stem.o" &>/dev/null); then
+                if [ -f "${ast_file}" ]; then
+                        rm "${ast_file}"
+                fi
         fi
 done

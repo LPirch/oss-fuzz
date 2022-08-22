@@ -8,6 +8,6 @@ cflags="-fplugin=/usr/local/lib/libgraph_extraction_plugin.so \
 $cflags"
 
 # disable warnings as error
-cflags="$cflags -Wno-error"
+cflags="$cflags -Wno-error -ferror-limit=0"
 
 echo "$cflags"
